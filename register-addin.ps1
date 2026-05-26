@@ -1,5 +1,4 @@
-# Registers PresAssistant add-in with Office 2019/365 via registry
-# Mimics what office-addin-debugging does automatically during npm start
+# Registers PresAssistant add-in with Office via registry shared folder catalog
 # No admin rights required
 
 $addinFolder = "$env:LOCALAPPDATA\PresAssistantAddin"
@@ -12,24 +11,41 @@ New-Item -ItemType Directory -Path $addinFolder -Force | Out-Null
 # Download production manifest from Spring Boot
 Write-Host "Downloading manifest from https://localhost:8082..."
 try {
-    Invoke-WebRequest -Uri $manifestUrl -OutFile "$addinFolder\manifest.xml"
+    Invoke-WebRequest -Uri $manifestUrl -OutFile "$addinFolder\manifest.xml" -UseBasicParsing
     Write-Host "Manifest saved to $addinFolder" -ForegroundColor Green
 } catch {
     Write-Error "Cannot connect to https://localhost:8082. Make sure the server is running."
     exit 1
 }
 
-# Write registry entry (HKCU — no admin needed)
-$regPath = "HKCU:\SOFTWARE\Microsoft\Office\16.0\WEF\TrustedCatalogs\$catalogId"
-New-Item -Path $regPath -Force | Out-Null
-Set-ItemProperty -Path $regPath -Name "Id"    -Value $catalogId
-Set-ItemProperty -Path $regPath -Name "Url"   -Value $addinFolder
-Set-ItemProperty -Path $regPath -Name "Flags" -Type DWord -Value 1
+# Catalog URL must end with backslash for Office to recognise it as a folder
+$catalogUrl = $addinFolder.TrimEnd('\') + '\'
+
+# Register under all installed Office versions (15.0, 16.0)
+$officeVersions = @("15.0", "16.0")
+$registered = $false
+
+foreach ($ver in $officeVersions) {
+    $wefBase = "HKCU:\SOFTWARE\Microsoft\Office\$ver\WEF"
+    if (Test-Path $wefBase) {
+        $regPath = "$wefBase\TrustedCatalogs\$catalogId"
+        New-Item -Path $regPath -Force | Out-Null
+        Set-ItemProperty -Path $regPath -Name "Id"    -Value $catalogId
+        Set-ItemProperty -Path $regPath -Name "Url"   -Value $catalogUrl
+        Set-ItemProperty -Path $regPath -Name "Flags" -Type DWord -Value 1
+        Write-Host "Registered for Office $ver" -ForegroundColor Green
+        $registered = $true
+    }
+}
+
+if (-not $registered) {
+    Write-Warning "No supported Office installation found (checked 15.0, 16.0)"
+    exit 1
+}
 
 Write-Host ""
-Write-Host "Registry entry created." -ForegroundColor Green
-Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Restart PowerPoint"
-Write-Host "  2. Insert -> My Add-ins -> tab 'SHARED FOLDER'"
-Write-Host "  3. Select 'Ассистент лектора' -> Add"
+Write-Host "Done. Next steps:" -ForegroundColor Yellow
+Write-Host "  1. Fully close PowerPoint (check Task Manager - no POWERPNT.EXE)"
+Write-Host "  2. Open PowerPoint"
+Write-Host "  3. Insert -> My Add-ins -> SHARED FOLDER tab"
+Write-Host "  4. Select 'Ассистент лектора' -> Add"
