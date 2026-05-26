@@ -1,5 +1,5 @@
 CREATE TABLE questions (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                  UUID PRIMARY KEY,
     lecture_session_id  UUID NOT NULL REFERENCES lecture_sessions(id),
     chat_id             BIGINT NOT NULL,
     student_name        VARCHAR(255),

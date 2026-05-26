@@ -1,33 +1,17 @@
 services:
 
-  postgres:
-    image: postgres:16
-    container_name: pres_assistant_v2_db
-    environment:
-      POSTGRES_DB: pres_assistant_v2
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   app:
     build: .
     container_name: pres_assistant_v2_app
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pres_assistant_v2
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-asisstant_for_lecture_bot}
       HOST_USERPROFILE: "${USERPROFILE}"
     volumes:
+      - h2_data:/app/data
       - ${USERPROFILE}:/mnt/userprofile:ro
-    depends_on:
-      - postgres
 
   addin:
     build: ./pres-assistant-addin
@@ -41,4 +25,4 @@ services:
       - ${USERPROFILE}/.office-addin-dev-certs:/root/.office-addin-dev-certs:ro
 
 volumes:
-  postgres_data:
+  h2_data:
