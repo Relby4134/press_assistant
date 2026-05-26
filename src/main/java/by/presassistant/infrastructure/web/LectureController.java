@@ -4,7 +4,6 @@ import by.presassistant.application.command.ChangeSlideCommand;
 import by.presassistant.application.command.SaveSlideCommand;
 import by.presassistant.application.command.StartLectureCommand;
 import by.presassistant.application.port.in.*;
-import by.presassistant.application.service.StudentService;
 import by.presassistant.domain.model.LectureSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -25,7 +24,6 @@ public class LectureController {
     private final ChangeSlideUseCase changeSlide;
     private final SaveSlideUseCase saveSlide;
     private final GetCurrentSlideFileUseCase getCurrentSlideFile;
-    private final StudentService studentService;
 
     @PostMapping("/start")
     public LectureSession start(@RequestParam String title,
@@ -46,7 +44,6 @@ public class LectureController {
 
     @PostMapping("/{id}/end")
     public ResponseEntity<Void> end(@PathVariable UUID id) {
-        studentService.notifyLectureEnded(id);
         endLecture.end(id);
         return ResponseEntity.noContent().build();
     }
