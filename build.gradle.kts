@@ -39,3 +39,36 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// === Addin build ===
+val npm = if (System.getProperty("os.name").lowercase().contains("windows")) "npm.cmd" else "npm"
+val addinDir       = file("pres-assistant-addin")
+val addinDistDir   = file("pres-assistant-addin/dist")
+val staticAddinDir = file("src/main/resources/static/addin")
+
+val npmInstall by tasks.registering(Exec::class) {
+    workingDir(addinDir)
+    commandLine(npm, "install")
+    inputs.file(addinDir.resolve("package.json"))
+    outputs.dir(addinDir.resolve("node_modules"))
+}
+
+val buildAddin by tasks.registering(Exec::class) {
+    dependsOn(npmInstall)
+    workingDir(addinDir)
+    commandLine(npm, "run", "build")
+    inputs.dir(addinDir.resolve("src"))
+    inputs.file(addinDir.resolve("webpack.config.js"))
+    inputs.file(addinDir.resolve("manifest.xml"))
+    outputs.dir(addinDistDir)
+}
+
+val copyAddinToResources by tasks.registering(Copy::class) {
+    dependsOn(buildAddin)
+    from(addinDistDir)
+    into(staticAddinDir)
+}
+
+tasks.named("processResources") {
+    dependsOn(copyAddinToResources)
+}
