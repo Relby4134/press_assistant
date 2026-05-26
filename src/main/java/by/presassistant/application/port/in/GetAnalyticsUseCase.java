@@ -6,5 +6,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface GetAnalyticsUseCase {
-    List<StudentAnalytics> execute(UUID lectureId);
+    List<StudentAnalytics> getAnalytics(UUID lectureId);
 }

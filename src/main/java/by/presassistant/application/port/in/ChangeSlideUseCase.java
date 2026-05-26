@@ -4,5 +4,5 @@ import by.presassistant.application.command.ChangeSlideCommand;
 import by.presassistant.domain.model.LectureSession;
 
 public interface ChangeSlideUseCase {
-    LectureSession execute(ChangeSlideCommand command);
+    LectureSession changeSlide(ChangeSlideCommand command);
 }

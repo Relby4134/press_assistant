@@ -4,5 +4,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface FindActiveLectureUseCase {
-    Optional<UUID> execute(Long chatId);
+    Optional<UUID> findActiveLecture(Long chatId);
 }

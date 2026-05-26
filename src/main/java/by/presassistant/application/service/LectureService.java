@@ -17,9 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,17 +37,17 @@ public class LectureService implements
 
     @Override
     @Transactional
-    public LectureSession execute(StartLectureCommand command) {
+    public LectureSession start(StartLectureCommand command) {
         LectureSession lecture = new LectureSession(UUID.randomUUID(), command.title(), command.fileUrl());
         LectureSession saved = lectureRepository.save(lecture);
-        eventPublisher.publishEvent(new LectureStartedEvent(saved.getId(), saved.getTitle()));
+        eventPublisher.publishEvent(new LectureStartedEvent(saved.getId(), saved.getTitle(), saved.getFilePath()));
         log.info("Lecture started: id={} title={}", saved.getId(), saved.getTitle());
         return saved;
     }
 
     @Override
     @Transactional
-    public void execute(UUID lectureId) {
+    public void end(UUID lectureId) {
         LectureSession lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new LectureNotFoundException(lectureId));
         lecture.end();
@@ -61,14 +58,14 @@ public class LectureService implements
     }
 
     @Override
-    public LectureSession execute(UUID lectureId) {
+    public LectureSession findById(UUID lectureId) {
         return lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new LectureNotFoundException(lectureId));
     }
 
     @Override
     @Transactional
-    public LectureSession execute(ChangeSlideCommand command) {
+    public LectureSession changeSlide(ChangeSlideCommand command) {
         LectureSession lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
         lecture.changeSlide(command.slideNumber());
@@ -78,17 +75,12 @@ public class LectureService implements
     }
 
     @Override
-    public void execute(SaveSlideCommand command) {
-        try {
-            byte[] imageBytes = Files.readAllBytes(Path.of(command.imagePath()));
-            slideStorage.storeSlide(command.lectureId(), command.slideNumber(), imageBytes);
-        } catch (IOException e) {
-            log.error("Failed to read slide image: {}", command.imagePath(), e);
-        }
+    public void saveSlide(SaveSlideCommand command) {
+        slideStorage.storeSlide(command.lectureId(), command.slideNumber(), command.imageBytes());
     }
 
     @Override
-    public byte[] execute(UUID lectureId) {
+    public byte[] getFile(UUID lectureId) {
         LectureSession lecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new LectureNotFoundException(lectureId));
         return slideStorage.getSlide(lectureId, lecture.getCurrentSlide())

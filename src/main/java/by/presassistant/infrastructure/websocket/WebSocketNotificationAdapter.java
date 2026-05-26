@@ -19,14 +19,14 @@ public class WebSocketNotificationAdapter implements RealtimeNotificationPort {
     public void broadcastSlideChanged(UUID lectureId, int slideNumber) {
         messagingTemplate.convertAndSend(
                 "/topic/lecture/" + lectureId,
-                Map.of("lectureId", lectureId, "slideNumber", slideNumber));
+                (Object) Map.of("lectureId", lectureId, "slideNumber", slideNumber));
     }
 
     @Override
     public void broadcastNewQuestion(UUID lectureId, Question question) {
         messagingTemplate.convertAndSend(
                 "/topic/lecture/" + lectureId + "/questions",
-                Map.of(
+                (Object) Map.of(
                         "id", question.getId(),
                         "studentName", question.getStudentName() != null ? question.getStudentName() : "",
                         "text", question.getText(),

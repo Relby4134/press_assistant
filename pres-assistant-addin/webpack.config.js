@@ -8,6 +8,15 @@ const urlDev = "https://localhost:3000/";
 const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
 
 async function getHttpsOptions() {
+  if (process.env.DOCKER) {
+    const fs = require("fs");
+    const dir = "/root/.office-addin-dev-certs";
+    return {
+      ca: fs.readFileSync(`${dir}/ca.crt`),
+      key: fs.readFileSync(`${dir}/localhost.key`),
+      cert: fs.readFileSync(`${dir}/localhost.crt`),
+    };
+  }
   const httpsOptions = await devCerts.getHttpsServerOptions();
   return { ca: httpsOptions.ca, key: httpsOptions.key, cert: httpsOptions.cert };
 }

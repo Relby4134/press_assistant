@@ -16,7 +16,7 @@ public class AnalyticsService implements GetAnalyticsUseCase {
     private final AnalyticsPort analyticsPort;
 
     @Override
-    public List<StudentAnalytics> execute(UUID lectureId) {
+    public List<StudentAnalytics> getAnalytics(UUID lectureId) {
         return analyticsPort.getAnalytics(lectureId);
     }
 }

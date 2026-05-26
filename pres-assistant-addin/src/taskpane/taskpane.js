@@ -210,12 +210,57 @@ async function captureAndSend(slideNumber) {
   }
 }
 
+// ── Захват текущего слайда как base64 PNG ─────────────────────────
+function captureSlideAsBase64() {
+  return new Promise((resolve) => {
+    Office.context.document.getSelectedDataAsync(
+      Office.CoercionType.XmlSvg,
+      (result) => {
+        if (result.status !== Office.AsyncResultStatus.Succeeded) {
+          resolve(null);
+          return;
+        }
+        const svgStr = result.value;
+        const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = 960;
+          canvas.height = 540;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL("image/png").split(",")[1]);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+        img.src = url;
+      }
+    );
+  });
+}
+
 // ── Отправка на бэкенд ────────────────────────────────────────────
 async function sendToBackend(slideNumber) {
-  const res = await fetch(`${state.serverUrl}/students/notify/slide`, {
+  // Захватить и загрузить изображение слайда
+  const imageBase64 = await captureSlideAsBase64();
+  if (imageBase64) {
+    try {
+      await fetch(`${state.serverUrl}/lecture/${state.lectureId}/slides`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slideNumber, imageBase64 }),
+      });
+    } catch { /* изображение опциональное */ }
+  }
+
+  // Уведомить студентов и обновить текущий слайд в БД
+  const res = await fetch(`${state.serverUrl}/lecture/${state.lectureId}/slide-changed`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lectureId: state.lectureId, slideNumber }),
+    body: JSON.stringify({ slideNumber }),
   });
   if (!res.ok) throw new Error(`Backend error: ${res.status}`);
   setSyncStatus(`Слайд ${slideNumber} отправлен ✓`, "ok");

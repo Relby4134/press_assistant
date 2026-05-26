@@ -65,7 +65,7 @@ public class StudentService implements
 
     @Override
     @Transactional
-    public Student execute(JoinLectureCommand command) {
+    public Student join(JoinLectureCommand command) {
         LectureSession lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException(command.lectureId()));
 
@@ -102,15 +102,15 @@ public class StudentService implements
 
     @Override
     @Transactional
-    public Student execute(Long chatId, String firstName, String username, String title) {
+    public Student joinByTitle(Long chatId, String firstName, String username, String title) {
         LectureSession lecture = lectureRepository.findActiveByTitle(title)
                 .orElseThrow(() -> new LectureNotFoundException(title));
-        return execute(new JoinLectureCommand(chatId, firstName, username, lecture.getId()));
+        return join(new JoinLectureCommand(chatId, firstName, username, lecture.getId()));
     }
 
     @Override
     @Transactional
-    public Question execute(AskQuestionCommand command) {
+    public Question ask(AskQuestionCommand command) {
         long count = questionRepository.countByLectureIdAndChatId(command.lectureId(), command.chatId());
         if (count >= QUESTION_LIMIT) {
             throw new QuestionLimitExceededException(command.chatId());
@@ -127,7 +127,7 @@ public class StudentService implements
 
     @Override
     @Transactional
-    public void execute(KickStudentCommand command) {
+    public void kick(KickStudentCommand command) {
         Student student = studentRepository
                 .findByChatIdAndLectureId(command.chatId(), command.lectureId())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
@@ -139,7 +139,7 @@ public class StudentService implements
     }
 
     @Override
-    public void execute(BroadcastCommand command) {
+    public void broadcast(BroadcastCommand command) {
         List<Student> students = studentRepository.findAllByLectureId(command.lectureId());
         students.stream()
                 .filter(s -> !s.isKicked())
@@ -148,17 +148,17 @@ public class StudentService implements
     }
 
     @Override
-    public List<Student> execute(UUID lectureId) {
+    public List<Student> getStudents(UUID lectureId) {
         return studentRepository.findAllByLectureId(lectureId);
     }
 
     @Override
-    public List<Question> execute(UUID lectureId) {
+    public List<Question> getQuestions(UUID lectureId) {
         return questionRepository.findAllByLectureId(lectureId);
     }
 
     @Override
-    public Optional<UUID> execute(Long chatId) {
+    public Optional<UUID> findActiveLecture(Long chatId) {
         return studentRepository.findActiveStudentByChatId(chatId)
                 .map(Student::getLectureSessionId);
     }

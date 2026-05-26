@@ -6,5 +6,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface GetQuestionsUseCase {
-    List<Question> execute(UUID lectureId);
+    List<Question> getQuestions(UUID lectureId);
 }

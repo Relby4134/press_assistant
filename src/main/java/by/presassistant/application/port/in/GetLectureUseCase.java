@@ -5,5 +5,5 @@ import by.presassistant.domain.model.LectureSession;
 import java.util.UUID;
 
 public interface GetLectureUseCase {
-    LectureSession execute(UUID lectureId);
+    LectureSession findById(UUID lectureId);
 }

@@ -55,7 +55,7 @@ public class NotificationService {
 
     @EventListener
     public void onQuestionAsked(QuestionAskedEvent event) {
-        Question question = studentService.execute(event.lectureId()).stream()
+        Question question = studentService.getQuestions(event.lectureId()).stream()
                 .filter(q -> q.getId().equals(event.questionId()))
                 .findFirst().orElse(null);
         if (question != null) {

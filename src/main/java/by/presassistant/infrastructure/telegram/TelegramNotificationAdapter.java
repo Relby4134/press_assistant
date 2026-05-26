@@ -2,7 +2,6 @@ package by.presassistant.infrastructure.telegram;
 
 import by.presassistant.application.port.out.NotificationPort;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
@@ -25,7 +24,7 @@ public class TelegramNotificationAdapter implements NotificationPort {
     private final TelegramClient telegramClient;
     private final Map<Long, Integer> lastSlideNotificationMsgId = new ConcurrentHashMap<>();
 
-    public TelegramNotificationAdapter(@Lazy TelegramClient telegramClient) {
+    public TelegramNotificationAdapter(TelegramClient telegramClient) {
         this.telegramClient = telegramClient;
     }
 

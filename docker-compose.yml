@@ -21,6 +21,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pres_assistant_v2
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      HOST_USERPROFILE: "${USERPROFILE}"
+    volumes:
+      - ${USERPROFILE}:/mnt/userprofile:ro
     depends_on:
       - postgres
 
@@ -29,6 +32,8 @@ services:
     container_name: pres_assistant_v2_addin
     ports:
       - "3000:3000"
+    environment:
+      DOCKER: "true"
     volumes:
       # Монтируем сертификаты с хоста чтобы PowerPoint доверял HTTPS
       - ${USERPROFILE}/.office-addin-dev-certs:/root/.office-addin-dev-certs:ro

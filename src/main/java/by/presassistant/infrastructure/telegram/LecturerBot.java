@@ -11,7 +11,6 @@ import by.presassistant.application.service.StudentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.BotSession;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration;
@@ -42,10 +41,11 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
     private final Map<Long, String> pendingAction = new ConcurrentHashMap<>();
 
     public LecturerBot(@Value("${telegram.bot.token}") String botToken,
+                       TelegramClient telegramClient,
                        StudentService studentService,
                        GetLectureUseCase getLecture,
                        NotificationPort notificationPort) {
-        this.telegramClient = new OkHttpTelegramClient(botToken);
+        this.telegramClient = telegramClient;
         this.botToken = botToken;
         this.studentService = studentService;
         this.getLecture = getLecture;
@@ -104,7 +104,7 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
         }
         try {
             UUID lectureId = UUID.fromString(parts[1].trim());
-            studentService.execute(new JoinLectureCommand(chatId, firstName, username, lectureId));
+            studentService.join(new JoinLectureCommand(chatId, firstName, username, lectureId));
         } catch (IllegalArgumentException e) {
             notificationPort.sendMessage(chatId, "❌ Неверный формат ссылки.");
         } catch (LectureNotFoundException e) {
@@ -129,16 +129,16 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
 
     private void joinByTitle(long chatId, String firstName, String username, String title) {
         try {
-            studentService.execute(chatId, firstName, username, title);
+            studentService.joinByTitle(chatId, firstName, username, title);
         } catch (LectureNotFoundException e) {
             notificationPort.sendMessage(chatId, "❌ Лекция \"" + title + "\" не найдена.");
         }
     }
 
     private void handleSlideRequest(long chatId) {
-        studentService.execute(chatId).ifPresentOrElse(
+        studentService.findActiveLecture(chatId).ifPresentOrElse(
                 lectureId -> {
-                    LectureSession lecture = getLecture.execute(lectureId);
+                    LectureSession lecture = getLecture.findById(lectureId);
                     int slideNumber = lecture.getCurrentSlide();
                     studentService.recordSlideRequest(lectureId, chatId, slideNumber);
                     studentService.getSlideImageBytes(lectureId, slideNumber)
@@ -153,14 +153,14 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
     }
 
     private void handleQuestion(long chatId, String firstName, String username, String text) {
-        studentService.execute(chatId).ifPresentOrElse(
+        studentService.findActiveLecture(chatId).ifPresentOrElse(
                 lectureId -> {
                     if (studentService.isStudentKicked(chatId, lectureId)) {
                         notificationPort.sendMessage(chatId, "❌ Вы были удалены с лекции.");
                         return;
                     }
                     try {
-                        studentService.execute(new AskQuestionCommand(lectureId, chatId, firstName, text));
+                        studentService.ask(new AskQuestionCommand(lectureId, chatId, firstName, text));
                     } catch (QuestionLimitExceededException e) {
                         notificationPort.sendMessage(chatId,
                                 "❌ Вы достигли лимита вопросов (10). Новые вопросы не принимаются.");

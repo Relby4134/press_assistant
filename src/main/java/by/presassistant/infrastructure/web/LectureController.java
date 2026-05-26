@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Base64;
 import java.util.UUID;
 
 @RestController
@@ -29,39 +30,40 @@ public class LectureController {
     @PostMapping("/start")
     public LectureSession start(@RequestParam String title,
                                 @RequestParam(required = false) String fileUrl) {
-        return startLecture.execute(new StartLectureCommand(title, fileUrl));
+        return startLecture.start(new StartLectureCommand(title, fileUrl));
     }
 
     @GetMapping("/{id}")
     public LectureSession get(@PathVariable UUID id) {
-        return getLecture.execute(id);
+        return getLecture.findById(id);
     }
 
     @PostMapping("/{id}/slide-changed")
     public LectureSession slideChanged(@PathVariable UUID id,
                                        @RequestBody java.util.Map<String, Integer> body) {
-        return changeSlide.execute(new ChangeSlideCommand(id, body.get("slideNumber")));
+        return changeSlide.changeSlide(new ChangeSlideCommand(id, body.get("slideNumber")));
     }
 
     @PostMapping("/{id}/end")
     public ResponseEntity<Void> end(@PathVariable UUID id) {
         studentService.notifyLectureEnded(id);
-        endLecture.execute(id);
+        endLecture.end(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/slides")
     public ResponseEntity<Void> uploadSlide(@PathVariable UUID id,
                                             @RequestBody java.util.Map<String, Object> body) {
-        saveSlide.execute(new SaveSlideCommand(id,
-                (Integer) body.get("slideNumber"),
-                (String) body.get("imagePath")));
+        String imageBase64 = (String) body.get("imageBase64");
+        int slideNumber = (Integer) body.get("slideNumber");
+        byte[] imageBytes = Base64.getDecoder().decode(imageBase64);
+        saveSlide.saveSlide(new SaveSlideCommand(id, slideNumber, imageBytes));
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}/current-slide/file")
     public ResponseEntity<byte[]> currentSlideFile(@PathVariable UUID id) {
-        byte[] bytes = getCurrentSlideFile.execute(id);
+        byte[] bytes = getCurrentSlideFile.getFile(id);
         return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(bytes);
     }
 

@@ -4,5 +4,5 @@ import by.presassistant.application.command.JoinLectureCommand;
 import by.presassistant.domain.model.Student;
 
 public interface JoinLectureUseCase {
-    Student execute(JoinLectureCommand command);
+    Student join(JoinLectureCommand command);
 }
