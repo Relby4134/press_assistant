@@ -8,7 +8,7 @@ let autoRefreshTimer  = null;
 let slidePollingTimer = null;
 
 const state = {
-  serverUrl: "http://localhost:8082",
+  serverUrl: "https://localhost:8082",
   lectureId: null,
   lectureTitle: null,
   autoSend: true,
