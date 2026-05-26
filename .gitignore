@@ -1,5 +1,22 @@
+# Build outputs
 build/
 .gradle/
+*.class
+
+# Secrets — NEVER commit these
+secrets.properties
+.env
+
+# Node
 pres-assistant-addin/node_modules/
 pres-assistant-addin/dist/
-*.class
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
