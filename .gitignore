@@ -7,6 +7,14 @@ build/
 secrets.properties
 .env
 
+# SSL private keys — never commit
+certs/*.key
+certs/*.p12
+certs/*.srl
+
+# Bundled bot credentials (generated into build dir, never committed)
+launcher.properties
+
 # Node
 pres-assistant-addin/node_modules/
 pres-assistant-addin/dist/

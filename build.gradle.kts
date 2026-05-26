@@ -72,3 +72,63 @@ val copyAddinToResources by tasks.registering(Copy::class) {
 tasks.named("processResources") {
     dependsOn(copyAddinToResources)
 }
+
+// === Standalone launcher JAR (thin — only LauncherApp, no Spring) ===
+val launcherJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("launcher")
+    dependsOn(tasks.compileJava)
+    manifest {
+        attributes["Main-Class"] = "by.presassistant.LauncherApp"
+    }
+    from(sourceSets.main.get().output) {
+        include("by/presassistant/LauncherApp*.class")
+    }
+}
+
+// === jpackage — Windows app image with bundled JRE ===
+val packageApp by tasks.registering(Exec::class) {
+    group = "distribution"
+    description = "Build Windows app image with bundled JRE (requires JDK 21+)"
+    dependsOn(tasks.bootJar, launcherJar)
+
+    val inputDir  = layout.buildDirectory.dir("jpackage-input").get().asFile
+    val outputDir = layout.buildDirectory.dir("app").get().asFile
+    val jpackage  = file(System.getProperty("java.home")).resolve("bin/jpackage.exe")
+        .takeIf { it.exists() }
+        ?: file(System.getProperty("java.home")).resolve("bin/jpackage")
+
+    doFirst {
+        delete(inputDir)
+        delete(outputDir.resolve("PresAssistant"))
+        inputDir.mkdirs()
+        outputDir.mkdirs()
+
+        tasks.bootJar.get().archiveFile.get().asFile
+            .copyTo(inputDir.resolve("presassistant.jar"), overwrite = true)
+        launcherJar.get().archiveFile.get().asFile
+            .copyTo(inputDir.resolve("launcher.jar"), overwrite = true)
+
+        listOf("presassistant-ca.crt", "install-cert.ps1", "register-addin.ps1").forEach { name ->
+            val f = file(name)
+            if (f.exists()) f.copyTo(inputDir.resolve(name), overwrite = true)
+        }
+
+        // Bundle bot credentials as defaults (gitignored, only present locally)
+        val secrets = file("secrets.properties")
+        if (secrets.exists()) secrets.copyTo(inputDir.resolve("launcher.properties"), overwrite = true)
+    }
+
+    commandLine(
+        jpackage.absolutePath,
+        "--type", "app-image",
+        "--name", "PresAssistant",
+        "--app-version", "1.0.0",
+        "--vendor", "University",
+        "--runtime-image", file(System.getProperty("java.home")).absolutePath,
+        "--input", inputDir.absolutePath,
+        "--dest", outputDir.absolutePath,
+        "--main-jar", "launcher.jar",
+        "--main-class", "by.presassistant.LauncherApp",
+        "--java-options", "-Djava.awt.headless=false"
+    )
+}

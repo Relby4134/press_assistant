@@ -9,6 +9,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-asisstant_for_lecture_bot}
       HOST_USERPROFILE: "${USERPROFILE}"
+      DB_URL: "jdbc:h2:file:/app/data/presassistant"
     volumes:
       - h2_data:/app/data
       - ${USERPROFILE}:/mnt/userprofile:ro

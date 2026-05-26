@@ -2,14 +2,14 @@
 # Installs the PresAssistant SSL certificate into Windows Trusted Root
 # so PowerPoint accepts the HTTPS connection to localhost:8082
 
-$certFile = Join-Path $PSScriptRoot "presassistant.crt"
+$certFile = Join-Path $PSScriptRoot "presassistant-ca.crt"
 
 if (-not (Test-Path $certFile)) {
     Write-Error "Certificate file not found: $certFile"
     exit 1
 }
 
-Write-Host "Installing PresAssistant certificate to Trusted Root..."
+Write-Host "Installing PresAssistant CA certificate to Trusted Root..."
 certutil -addstore -f "Root" $certFile
 
 if ($LASTEXITCODE -eq 0) {
