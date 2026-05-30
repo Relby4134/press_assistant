@@ -22,6 +22,9 @@ pres-assistant-addin/dist/
 # Generated addin static resources (built by webpack, bundled into JAR)
 src/main/resources/static/
 
+# Claude Code
+.claude/
+
 # IDE
 .idea/
 *.iml
