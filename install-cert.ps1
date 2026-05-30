@@ -9,7 +9,14 @@ if (-not (Test-Path $certFile)) {
     exit 1
 }
 
-Write-Host "Installing PresAssistant CA certificate to Trusted Root..."
+# Remove any old PresAssistant certs first
+$old = Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -like '*PresAssistant*' }
+foreach ($c in $old) {
+    Write-Host "Removing old cert: $($c.Thumbprint)"
+    Remove-Item $c.PSPath -Force
+}
+
+Write-Host "Installing PresAssistant SSL certificate to Trusted Root..."
 certutil -addstore -f "Root" $certFile
 
 if ($LASTEXITCODE -eq 0) {
