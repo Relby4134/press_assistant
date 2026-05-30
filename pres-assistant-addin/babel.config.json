@@ -3,10 +3,9 @@
     [
       "@babel/preset-env",
       {
-        "targets": {
-          "esmodules": false
-        }
+        "useBuiltIns": "entry",
+        "corejs": 3
       }
-    ],
+    ]
   ]
 }

@@ -29,7 +29,8 @@
   "dependencies": {
     "core-js": "^3.36.0",
     "qrcode": "^1.5.4",
-    "regenerator-runtime": "^0.14.1"
+    "regenerator-runtime": "^0.14.1",
+    "whatwg-fetch": "^3.6.20"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
