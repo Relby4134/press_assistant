@@ -6,6 +6,8 @@ import java.awt.*;
 import java.io.*;
 import java.net.URI;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -27,6 +29,13 @@ public class LauncherApp {
     private static JButton addinBtn;
     private static JPanel setupPanel;
     private static JFrame mainFrame;
+
+    private static JCheckBox cmdJoinCheckBox;
+    private static JCheckBox cmdSlideCheckBox;
+    private static JCheckBox cmdQuestionsCheckBox;
+
+    private static JProgressBar progressBar;
+    private static JLabel logLabel;
 
     private static final Path CONFIG_FILE =
             Path.of(System.getProperty("user.home"), ".presassistant", "config.properties");
@@ -68,6 +77,8 @@ public class LauncherApp {
         root.add(labeledRow("Токен бота:", tokenField));
         root.add(Box.createVerticalStrut(8));
         root.add(labeledRow("Имя бота:", usernameField));
+        root.add(Box.createVerticalStrut(8));
+        root.add(buildCommandsPanel(cfg));
 
         // Setup section — shown only if setup is not yet complete
         if (!certDone || !addinDone) {
@@ -83,7 +94,23 @@ public class LauncherApp {
         statusLabel.setFont(statusLabel.getFont().deriveFont(12f));
         root.add(statusLabel);
 
-        root.add(Box.createVerticalStrut(12));
+        progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        progressBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 6));
+        progressBar.setVisible(false);
+        root.add(Box.createVerticalStrut(4));
+        root.add(progressBar);
+
+        logLabel = new JLabel(" ", SwingConstants.CENTER);
+        logLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logLabel.setFont(logLabel.getFont().deriveFont(10f));
+        logLabel.setForeground(Color.GRAY);
+        logLabel.setVisible(false);
+        root.add(Box.createVerticalStrut(2));
+        root.add(logLabel);
+
+        root.add(Box.createVerticalStrut(8));
 
         startBtn = new JButton("▶  Запустить");
         stopBtn  = new JButton("■  Остановить");
@@ -103,6 +130,28 @@ public class LauncherApp {
         mainFrame.setMinimumSize(new Dimension(480, mainFrame.getHeight()));
         mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
+    }
+
+    private static JPanel buildCommandsPanel(Properties cfg) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder("Команды бота"));
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        cmdJoinCheckBox = new JCheckBox(
+                "/join — подключение к лекции по названию",
+                !"false".equals(cfg.getProperty("bot.cmd.join", "true")));
+        cmdSlideCheckBox = new JCheckBox(
+                "/slide — запрос текущего слайда",
+                !"false".equals(cfg.getProperty("bot.cmd.slide", "true")));
+        cmdQuestionsCheckBox = new JCheckBox(
+                "Вопросы от студентов (текстовые сообщения)",
+                !"false".equals(cfg.getProperty("bot.cmd.questions", "true")));
+
+        panel.add(cmdJoinCheckBox);
+        panel.add(cmdSlideCheckBox);
+        panel.add(cmdQuestionsCheckBox);
+        return panel;
     }
 
     private static JPanel buildSetupPanel(boolean certDone, boolean addinDone) {
@@ -249,6 +298,13 @@ public class LauncherApp {
         startBtn.setEnabled(false);
         tokenField.setEnabled(false);
         usernameField.setEnabled(false);
+        cmdJoinCheckBox.setEnabled(false);
+        cmdSlideCheckBox.setEnabled(false);
+        cmdQuestionsCheckBox.setEnabled(false);
+        progressBar.setVisible(true);
+        logLabel.setText(" ");
+        logLabel.setVisible(true);
+        mainFrame.pack();
         setStatus(Color.GRAY, "Запускается...");
 
         new Thread(() -> {
@@ -263,6 +319,11 @@ public class LauncherApp {
                         "-jar", serverJar.toString());
                 pb.environment().put("TELEGRAM_BOT_TOKEN", token);
                 pb.environment().put("TELEGRAM_BOT_USERNAME", username);
+                List<String> enabled = new ArrayList<>();
+                if (cmdJoinCheckBox.isSelected()) enabled.add("join");
+                if (cmdSlideCheckBox.isSelected()) enabled.add("slide");
+                if (cmdQuestionsCheckBox.isSelected()) enabled.add("questions");
+                pb.environment().put("BOT_ENABLED_COMMANDS", String.join(",", enabled));
                 pb.directory(appDir.toFile());
                 pb.redirectErrorStream(true);
 
@@ -272,11 +333,16 @@ public class LauncherApp {
                         new InputStreamReader(serverProcess.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
+                        final String logLine = truncate(line);
+                        SwingUtilities.invokeLater(() -> logLabel.setText(logLine));
                         if (line.contains("Started PresAssistantApplication")
                                 || line.contains("Tomcat started on port")) {
                             serverRunning = true;
                             SwingUtilities.invokeLater(() -> {
                                 setStatus(new Color(0, 140, 0), "Сервер работает — https://localhost:8082");
+                                progressBar.setVisible(false);
+                                logLabel.setVisible(false);
+                                mainFrame.pack();
                                 stopBtn.setEnabled(true);
                             });
                         }
@@ -288,6 +354,9 @@ public class LauncherApp {
                 if (exitCode != 0 && !stoppingIntentionally) {
                     SwingUtilities.invokeLater(() -> {
                         setStatus(Color.RED, "Сервер завершился с ошибкой (код " + exitCode + ")");
+                        progressBar.setVisible(false);
+                        logLabel.setVisible(false);
+                        mainFrame.pack();
                         resetControls();
                     });
                 }
@@ -295,6 +364,9 @@ public class LauncherApp {
                 serverRunning = false;
                 SwingUtilities.invokeLater(() -> {
                     setStatus(Color.RED, "Ошибка запуска: " + ex.getMessage());
+                    progressBar.setVisible(false);
+                    logLabel.setVisible(false);
+                    mainFrame.pack();
                     resetControls();
                 });
             }
@@ -339,6 +411,18 @@ public class LauncherApp {
         startBtn.setEnabled(true);
         tokenField.setEnabled(true);
         usernameField.setEnabled(true);
+        cmdJoinCheckBox.setEnabled(true);
+        cmdSlideCheckBox.setEnabled(true);
+        cmdQuestionsCheckBox.setEnabled(true);
+        progressBar.setVisible(false);
+        logLabel.setVisible(false);
+        mainFrame.pack();
+    }
+
+    private static String truncate(String line) {
+        String stripped = line.replaceAll("^.*\\]\\s*", "").trim();
+        String text = stripped.isEmpty() ? line.trim() : stripped;
+        return text.length() > 70 ? text.substring(0, 67) + "…" : text;
     }
 
     private static void setStatus(Color color, String text) {
@@ -379,6 +463,9 @@ public class LauncherApp {
             Properties p = loadConfig();
             p.setProperty("TELEGRAM_BOT_TOKEN", token);
             p.setProperty("TELEGRAM_BOT_USERNAME", username);
+            p.setProperty("bot.cmd.join",      String.valueOf(cmdJoinCheckBox.isSelected()));
+            p.setProperty("bot.cmd.slide",     String.valueOf(cmdSlideCheckBox.isSelected()));
+            p.setProperty("bot.cmd.questions", String.valueOf(cmdQuestionsCheckBox.isSelected()));
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { p.store(out, null); }
         } catch (IOException ignored) {}
     }

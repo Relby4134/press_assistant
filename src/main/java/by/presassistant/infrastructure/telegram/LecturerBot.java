@@ -23,10 +23,14 @@ import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -37,10 +41,12 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
     private final GetLectureUseCase getLecture;
     private final NotificationPort notificationPort;
     private final String botToken;
+    private final Set<String> enabledCommands;
 
     private final Map<Long, String> pendingAction = new ConcurrentHashMap<>();
 
     public LecturerBot(@Value("${telegram.bot.token}") String botToken,
+                       @Value("${bot.enabled.commands:join,slide,questions}") String enabledCommandsRaw,
                        TelegramClient telegramClient,
                        StudentService studentService,
                        GetLectureUseCase getLecture,
@@ -50,6 +56,10 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
         this.studentService = studentService;
         this.getLecture = getLecture;
         this.notificationPort = notificationPort;
+        this.enabledCommands = Arrays.stream(enabledCommandsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
     }
 
     @Override public String getBotToken() { return botToken; }
@@ -78,12 +88,12 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
             if (text.startsWith("/")) pendingAction.remove(chatId);
 
             if      (text.startsWith("/start")) handleStart(chatId, firstName, username, text);
-            else if (text.equals("/slide"))     handleSlideRequest(chatId);
+            else if (text.equals("/slide"))     { if (enabledCommands.contains("slide")) handleSlideRequest(chatId); }
             else if (text.equals("/help"))      handleHelp(chatId);
-            else if (text.startsWith("/join"))  handleJoin(chatId, firstName, username, text);
+            else if (text.startsWith("/join"))  { if (enabledCommands.contains("join")) handleJoin(chatId, firstName, username, text); }
             else if (pendingAction.containsKey(chatId))
                 handlePending(chatId, firstName, username, text);
-            else
+            else if (enabledCommands.contains("questions"))
                 handleQuestion(chatId, firstName, username, text);
 
         } catch (Exception e) {
@@ -96,10 +106,11 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
     private void handleStart(long chatId, String firstName, String username, String text) {
         String[] parts = text.split(" ", 2);
         if (parts.length < 2 || parts[1].isBlank()) {
+            String joinHint = enabledCommands.contains("join")
+                    ? "\nили используйте: /join <название лекции>" : "";
             notificationPort.sendMessage(chatId,
                     "👋 Привет, " + firstName + "!\n\n" +
-                    "Для подключения к лекции отсканируйте QR-код\n" +
-                    "или используйте: /join <название лекции>");
+                    "Для подключения к лекции отсканируйте QR-код" + joinHint);
             return;
         }
         try {
@@ -179,30 +190,35 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
         } catch (TelegramApiException e) {
             log.error("Failed to answer callback: {}", e.getMessage());
         }
-        if ("show_slide".equals(query.getData())) handleSlideRequest(chatId);
+        if ("show_slide".equals(query.getData()) && enabledCommands.contains("slide"))
+            handleSlideRequest(chatId);
     }
 
     private void handleHelp(long chatId) {
-        notificationPort.sendMessage(chatId,
-                "📖 Доступные команды:\n\n" +
-                "/join <название> — подключиться к лекции\n" +
-                "/slide — получить текущий слайд\n" +
-                "/help — показать это сообщение\n\n" +
-                "Чтобы задать вопрос лектору — просто напишите его текстом.");
+        StringBuilder sb = new StringBuilder("📖 Доступные команды:\n\n");
+        if (enabledCommands.contains("join"))
+            sb.append("/join <название> — подключиться к лекции\n");
+        if (enabledCommands.contains("slide"))
+            sb.append("/slide — получить текущий слайд\n");
+        sb.append("/help — показать это сообщение");
+        if (enabledCommands.contains("questions"))
+            sb.append("\n\nЧтобы задать вопрос лектору — просто напишите его текстом.");
+        notificationPort.sendMessage(chatId, sb.toString());
     }
 
     @AfterBotRegistration
     public void afterRegistration(BotSession botSession) {
         try {
-            telegramClient.execute(SetMyCommands.builder()
-                    .commands(List.of(
-                            BotCommand.builder().command("join").description("Подключиться к лекции").build(),
-                            BotCommand.builder().command("slide").description("Получить текущий слайд").build(),
-                            BotCommand.builder().command("help").description("Помощь").build()))
-                    .build());
+            List<BotCommand> commands = new ArrayList<>();
+            if (enabledCommands.contains("join"))
+                commands.add(BotCommand.builder().command("join").description("Подключиться к лекции").build());
+            if (enabledCommands.contains("slide"))
+                commands.add(BotCommand.builder().command("slide").description("Получить текущий слайд").build());
+            commands.add(BotCommand.builder().command("help").description("Помощь").build());
+            telegramClient.execute(SetMyCommands.builder().commands(commands).build());
         } catch (TelegramApiException e) {
             log.error("Failed to set commands: {}", e.getMessage());
         }
-        log.info("Bot registered");
+        log.info("Bot registered with commands: {}", enabledCommands);
     }
 }
