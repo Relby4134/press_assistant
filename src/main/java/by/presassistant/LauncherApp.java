@@ -536,13 +536,22 @@ public class LauncherApp {
         certBtn.setText("Устанавливается...");
         new Thread(() -> {
             try {
-                Path script = getAppDir().resolve("install-cert.ps1");
+                Path script  = getAppDir().resolve("install-cert.ps1");
+                Path logFile = Path.of(System.getProperty("java.io.tmpdir"),
+                        "presassistant-cert-install.log");
+
                 new ProcessBuilder("powershell.exe", "-Command",
                         "Start-Process powershell -Verb RunAs -Wait " +
                         "-ArgumentList @('-ExecutionPolicy','Bypass','-File','" + script.toString().replace("'", "''") + "')")
                         .redirectErrorStream(true).start()
                         .waitFor(60, TimeUnit.SECONDS);
+
                 boolean ok = isCertInstalled();
+                String log = "";
+                if (!ok && Files.exists(logFile)) {
+                    try { log = Files.readString(logFile); } catch (IOException ignored) {}
+                }
+                final String logText = log;
                 SwingUtilities.invokeLater(() -> {
                     if (ok) {
                         certStatusLabel.setText("✔  Сертификат установлен");
@@ -550,10 +559,25 @@ public class LauncherApp {
                         certBtn.setVisible(false);
                         saveSetupFlag("setup.cert", "true");
                     } else {
-                        certStatusLabel.setText("✘  Ошибка — попробуйте ещё раз");
+                        certStatusLabel.setText("✘  Ошибка установки");
                         certStatusLabel.setForeground(RED);
                         certBtn.setText("Установить...");
                         certBtn.setEnabled(true);
+                        if (!logText.isBlank()) {
+                            JTextArea ta = new JTextArea(logText, 12, 60);
+                            ta.setEditable(false);
+                            ta.setFont(new Font("Monospaced", Font.PLAIN, 11));
+                            JOptionPane.showMessageDialog(mainFrame,
+                                    new JScrollPane(ta),
+                                    "Лог установки сертификата",
+                                    JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(mainFrame,
+                                    "Сертификат не установлен.\n" +
+                                    "Убедитесь что нажали «Да» в окне UAC.\n" +
+                                    "Файл лога: " + logFile,
+                                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 });
             } catch (Exception ex) {
