@@ -38,7 +38,7 @@ public class LectureService implements
     @Override
     @Transactional
     public LectureSession start(StartLectureCommand command) {
-        LectureSession lecture = new LectureSession(UUID.randomUUID(), command.title(), command.fileUrl());
+        LectureSession lecture = new LectureSession(UUID.randomUUID(), command.title(), command.fileUrl(), command.requireNames());
         LectureSession saved = lectureRepository.save(lecture);
         eventPublisher.publishEvent(new LectureStartedEvent(saved.getId(), saved.getTitle(), saved.getFilePath()));
         log.info("Lecture started: id={} title={}", saved.getId(), saved.getTitle());
@@ -61,6 +61,12 @@ public class LectureService implements
     public LectureSession findById(UUID lectureId) {
         return lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new LectureNotFoundException(lectureId));
+    }
+
+    @Override
+    public LectureSession findActiveByTitle(String title) {
+        return lectureRepository.findActiveByTitle(title)
+                .orElseThrow(() -> new LectureNotFoundException(title));
     }
 
     @Override

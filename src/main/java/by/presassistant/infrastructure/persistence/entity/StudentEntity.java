@@ -25,6 +25,9 @@ public class StudentEntity {
 
     private String username;
 
+    @Column(name = "full_name")
+    private String fullName;
+
     @Column(name = "lecture_session_id", nullable = false)
     private UUID lectureSessionId;
 

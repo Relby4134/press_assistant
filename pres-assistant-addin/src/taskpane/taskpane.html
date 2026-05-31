@@ -18,6 +18,20 @@
         <input id="input-title" type="text" placeholder="например: Лекция 1 — Введение" />
     </div>
 
+    <div class="field">
+        <label>Режим участия</label>
+        <div class="mode-selector">
+            <label class="radio-opt">
+                <input type="radio" name="mode" id="mode-anonymous" value="anonymous" checked />
+                Анонимный
+            </label>
+            <label class="radio-opt">
+                <input type="radio" name="mode" id="mode-named" value="named" />
+                Поимённый (студенты вводят Ф.И.)
+            </label>
+        </div>
+    </div>
+
     <button id="btn-start" class="btn-primary">Начать лекцию</button>
     <div id="setup-error" class="error hidden"></div>
 </div>

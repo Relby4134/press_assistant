@@ -6,6 +6,7 @@ public record StudentAnalytics(
         Long chatId,
         String firstName,
         String username,
+        String fullName,
         boolean kicked,
         int totalRequests,
         List<SlideStats> slides

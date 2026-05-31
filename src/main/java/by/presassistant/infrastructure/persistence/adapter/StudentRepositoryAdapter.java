@@ -42,7 +42,7 @@ public class StudentRepositoryAdapter implements StudentRepository {
 
     private Student toDomain(StudentEntity e) {
         return new Student(e.getId(), e.getChatId(), e.getFirstName(),
-                e.getUsername(), e.isKicked(), e.getJoinedAt(), e.getLectureSessionId());
+                e.getUsername(), e.isKicked(), e.getJoinedAt(), e.getLectureSessionId(), e.getFullName());
     }
 
     private StudentEntity toEntity(Student s) {
@@ -51,6 +51,7 @@ public class StudentRepositoryAdapter implements StudentRepository {
                 .chatId(s.getChatId())
                 .firstName(s.getFirstName())
                 .username(s.getUsername())
+                .fullName(s.getFullName())
                 .lectureSessionId(s.getLectureSessionId())
                 .joinedAt(s.getJoinedAt())
                 .kicked(s.isKicked())

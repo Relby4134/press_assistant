@@ -13,24 +13,27 @@ public class LectureSession {
     private boolean ended;
     private final LocalDateTime startedAt;
     private String filePath;
+    private boolean requireNames;
 
-    public LectureSession(UUID id, String title, String filePath) {
+    public LectureSession(UUID id, String title, String filePath, boolean requireNames) {
         this.id = id;
         this.title = title;
         this.filePath = filePath;
+        this.requireNames = requireNames;
         this.currentSlide = 1;
         this.ended = false;
         this.startedAt = LocalDateTime.now();
     }
 
     public LectureSession(UUID id, String title, int currentSlide, boolean ended,
-                          LocalDateTime startedAt, String filePath) {
+                          LocalDateTime startedAt, String filePath, boolean requireNames) {
         this.id = id;
         this.title = title;
         this.currentSlide = currentSlide;
         this.ended = ended;
         this.startedAt = startedAt;
         this.filePath = filePath;
+        this.requireNames = requireNames;
     }
 
     public void changeSlide(int slideNumber) {
@@ -46,10 +49,11 @@ public class LectureSession {
         return !ended;
     }
 
-    public UUID getId()           { return id; }
-    public String getTitle()      { return title; }
-    public int getCurrentSlide()  { return currentSlide; }
-    public boolean isEnded()      { return ended; }
+    public UUID getId()              { return id; }
+    public String getTitle()         { return title; }
+    public int getCurrentSlide()     { return currentSlide; }
+    public boolean isEnded()         { return ended; }
     public LocalDateTime getStartedAt() { return startedAt; }
-    public String getFilePath()   { return filePath; }
+    public String getFilePath()      { return filePath; }
+    public boolean isRequireNames()  { return requireNames; }
 }

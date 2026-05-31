@@ -27,8 +27,9 @@ public class LectureController {
 
     @PostMapping("/start")
     public LectureSession start(@RequestParam String title,
-                                @RequestParam(required = false) String fileUrl) {
-        return startLecture.start(new StartLectureCommand(title, fileUrl));
+                                @RequestParam(required = false) String fileUrl,
+                                @RequestParam(defaultValue = "false") boolean requireNames) {
+        return startLecture.start(new StartLectureCommand(title, fileUrl, requireNames));
     }
 
     @GetMapping("/{id}")

@@ -31,4 +31,8 @@ public class LectureSessionEntity {
     @Builder.Default
     @Column(name = "ended", nullable = false)
     private boolean ended = false;
+
+    @Builder.Default
+    @Column(name = "require_names", nullable = false)
+    private boolean requireNames = false;
 }

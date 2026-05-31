@@ -16,7 +16,6 @@ import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsume
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -43,6 +42,7 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
     private final String botToken;
     private final Set<String> enabledCommands;
 
+    // Values: "join" | "name:<lectureId>"
     private final Map<Long, String> pendingAction = new ConcurrentHashMap<>();
 
     public LecturerBot(@Value("${telegram.bot.token}") String botToken,
@@ -115,7 +115,14 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
         }
         try {
             UUID lectureId = UUID.fromString(parts[1].trim());
-            studentService.join(new JoinLectureCommand(chatId, firstName, username, lectureId));
+            LectureSession lecture = getLecture.findById(lectureId);
+            if (lecture.isRequireNames()) {
+                pendingAction.put(chatId, "name:" + lectureId);
+                notificationPort.sendMessage(chatId,
+                        "👤 Для участия в лекции «" + lecture.getTitle() + "» введите вашу фамилию и имя:");
+                return;
+            }
+            studentService.join(new JoinLectureCommand(chatId, firstName, username, lectureId, null));
         } catch (IllegalArgumentException e) {
             notificationPort.sendMessage(chatId, "❌ Неверный формат ссылки.");
         } catch (LectureNotFoundException e) {
@@ -135,12 +142,28 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
 
     private void handlePending(long chatId, String firstName, String username, String text) {
         String action = pendingAction.remove(chatId);
-        if ("join".equals(action)) joinByTitle(chatId, firstName, username, text);
+        if ("join".equals(action)) {
+            joinByTitle(chatId, firstName, username, text);
+        } else if (action != null && action.startsWith("name:")) {
+            UUID lectureId = UUID.fromString(action.substring(5));
+            try {
+                studentService.join(new JoinLectureCommand(chatId, firstName, username, lectureId, text.trim()));
+            } catch (LectureNotFoundException e) {
+                notificationPort.sendMessage(chatId, "❌ Лекция не найдена или уже завершена.");
+            }
+        }
     }
 
     private void joinByTitle(long chatId, String firstName, String username, String title) {
         try {
-            studentService.joinByTitle(chatId, firstName, username, title);
+            LectureSession lecture = getLecture.findActiveByTitle(title);
+            if (lecture.isRequireNames()) {
+                pendingAction.put(chatId, "name:" + lecture.getId());
+                notificationPort.sendMessage(chatId,
+                        "👤 Для участия в лекции «" + lecture.getTitle() + "» введите вашу фамилию и имя:");
+                return;
+            }
+            studentService.join(new JoinLectureCommand(chatId, firstName, username, lecture.getId(), null));
         } catch (LectureNotFoundException e) {
             notificationPort.sendMessage(chatId, "❌ Лекция \"" + title + "\" не найдена.");
         }
@@ -171,7 +194,8 @@ public class LecturerBot implements SpringLongPollingBot, LongPollingUpdateConsu
                         return;
                     }
                     try {
-                        studentService.ask(new AskQuestionCommand(lectureId, chatId, firstName, text));
+                        String displayName = studentService.getStudentDisplayName(chatId, lectureId);
+                        studentService.ask(new AskQuestionCommand(lectureId, chatId, displayName, text));
                     } catch (QuestionLimitExceededException e) {
                         notificationPort.sendMessage(chatId,
                                 "❌ Вы достигли лимита вопросов (10). Новые вопросы не принимаются.");

@@ -29,7 +29,7 @@ public class StudentController {
     @PostMapping("/join")
     public Student join(@RequestBody JoinRequest req) {
         return studentService.join(
-                new JoinLectureCommand(req.chatId(), req.firstName(), req.username(), req.lectureId()));
+                new JoinLectureCommand(req.chatId(), req.firstName(), req.username(), req.lectureId(), null));
     }
 
     @PostMapping("/question")

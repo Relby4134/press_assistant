@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface GetLectureUseCase {
     LectureSession findById(UUID lectureId);
+    LectureSession findActiveByTitle(String title);
 }

@@ -48,8 +48,9 @@ async function onStart() {
 
   try {
     const fileUrl = Office.context.document.url;
+    const requireNames = el("mode-named").checked;
     const res = await fetch(
-      `${state.serverUrl}/lecture/start?title=${encodeURIComponent(title)}&fileUrl=${encodeURIComponent(fileUrl)}`,
+      `${state.serverUrl}/lecture/start?title=${encodeURIComponent(title)}&fileUrl=${encodeURIComponent(fileUrl)}&requireNames=${requireNames}`,
       { method: "POST" }
     );
     if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`);
@@ -343,13 +344,14 @@ function renderAnalytics(data) {
     return;
   }
   list.innerHTML = data.map(s => {
+    const displayName = s.fullName || s.firstName || "Студент";
     const slidesStr = s.slides
       .map(sl => `слайд ${sl.slideNumber}${sl.count > 1 ? ` ×${sl.count}` : ""}`)
       .join(", ");
     return `
       <div class="analytics-item${s.kicked ? " kicked" : ""}">
         <div class="analytics-name">
-          ${escapeHtml(s.firstName || "Студент")}
+          ${escapeHtml(displayName)}
           ${s.kicked ? '<span class="kicked-badge">выгнан</span>' : ""}
           <span class="analytics-total">${s.totalRequests}</span>
         </div>
@@ -398,17 +400,23 @@ function renderStudents(students) {
   badge.textContent = activeCount;
   badge.classList.remove("hidden");
   list.innerHTML = students
-    .map(s => `
+    .map(s => {
+      const displayName = s.fullName || s.firstName || "Студент";
+      const subtitle = s.fullName
+        ? (s.username ? `@${escapeHtml(s.username)}` : "")
+        : "";
+      return `
       <div class="student-item${s.kicked ? " kicked" : ""}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px">
           <div>
-            <span class="s-name">${escapeHtml(s.firstName || "Студент")}</span>
+            <span class="s-name">${escapeHtml(displayName)}</span>
             ${s.kicked ? '<span class="kicked-badge">выгнан</span>' : ""}
-            ${s.username ? `<div class="s-username">@${escapeHtml(s.username)}</div>` : ""}
+            ${subtitle ? `<div class="s-username">${subtitle}</div>` : ""}
           </div>
           ${!s.kicked ? `<button class="btn-kick" onclick="kickStudent(${s.chatId})">Выгнать</button>` : ""}
         </div>
-      </div>`)
+      </div>`;
+    })
     .join("");
 }
 
