@@ -26,6 +26,7 @@ dependencies {
     implementation("org.telegram:telegrambots-client:7.10.0")
     implementation("org.telegram:telegrambots-springboot-longpolling-starter:7.10.0")
     implementation("org.apache.poi:poi-ooxml:5.3.0")
+    implementation("com.formdev:flatlaf:3.4.1")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("com.h2database:h2")
