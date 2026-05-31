@@ -74,7 +74,7 @@ tasks.named("processResources") {
     dependsOn(copyAddinToResources)
 }
 
-// === Standalone launcher JAR (thin — only LauncherApp, no Spring) ===
+// === Standalone launcher JAR (LauncherApp + FlatLaf bundled) ===
 val launcherJar by tasks.registering(Jar::class) {
     archiveClassifier.set("launcher")
     dependsOn(tasks.compileJava)
@@ -83,6 +83,14 @@ val launcherJar by tasks.registering(Jar::class) {
     }
     from(sourceSets.main.get().output) {
         include("by/presassistant/LauncherApp*.class")
+    }
+    // Bundle FlatLaf so the thin JAR is self-contained
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.name.contains("flatlaf") }
+            .map { zipTree(it) }
+    }) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
     }
 }
 
