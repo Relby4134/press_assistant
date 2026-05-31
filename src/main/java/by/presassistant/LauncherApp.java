@@ -540,11 +540,19 @@ public class LauncherApp {
                 Path logFile = Path.of(System.getProperty("java.io.tmpdir"),
                         "presassistant-cert-install.log");
 
-                new ProcessBuilder("powershell.exe", "-Command",
-                        "Start-Process powershell -Verb RunAs -Wait " +
-                        "-ArgumentList @('-ExecutionPolicy','Bypass','-File','" + script.toString().replace("'", "''") + "')")
-                        .redirectErrorStream(true).start()
-                        .waitFor(60, TimeUnit.SECONDS);
+                boolean uacEnabled = isUacEnabled();
+                ProcessBuilder pb;
+                if (uacEnabled) {
+                    // UAC включён — запускаем с повышением прав
+                    pb = new ProcessBuilder("powershell.exe", "-Command",
+                            "Start-Process powershell -Verb RunAs -Wait " +
+                            "-ArgumentList @('-ExecutionPolicy','Bypass','-File','" + script.toString().replace("'", "''") + "')");
+                } else {
+                    // UAC отключён — пользователь уже администратор, запускаем напрямую
+                    pb = new ProcessBuilder("powershell.exe",
+                            "-ExecutionPolicy", "Bypass", "-File", script.toString());
+                }
+                pb.redirectErrorStream(true).start().waitFor(60, TimeUnit.SECONDS);
 
                 boolean ok = isCertInstalled();
                 String log = "";
@@ -744,6 +752,19 @@ public class LauncherApp {
     }
 
     // ── System ────────────────────────────────────────────────────────────
+
+    private static boolean isUacEnabled() {
+        try {
+            Process p = new ProcessBuilder("powershell.exe", "-NonInteractive", "-Command",
+                    "(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System').EnableLUA")
+                    .redirectErrorStream(true).start();
+            String out = new String(p.getInputStream().readAllBytes()).trim();
+            p.waitFor(5, TimeUnit.SECONDS);
+            return "1".equals(out);
+        } catch (Exception e) {
+            return true; // на случай ошибки считаем что UAC включён
+        }
+    }
 
     private static boolean isCertInstalled() {
         try {
