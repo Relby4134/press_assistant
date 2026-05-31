@@ -8,13 +8,16 @@ $manifestUrl = "https://localhost:8082/addin/manifest.xml"
 # Create local folder for manifest
 New-Item -ItemType Directory -Path $addinFolder -Force | Out-Null
 
+# Bypass SSL validation for self-signed certificate
+[Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+
 # Download production manifest from Spring Boot
 Write-Host "Downloading manifest from https://localhost:8082..."
 try {
-    Invoke-WebRequest -Uri $manifestUrl -OutFile "$addinFolder\manifest.xml" -UseBasicParsing
+    (New-Object Net.WebClient).DownloadFile($manifestUrl, "$addinFolder\manifest.xml")
     Write-Host "Manifest saved to $addinFolder" -ForegroundColor Green
 } catch {
-    Write-Error "Cannot connect to https://localhost:8082. Make sure the server is running."
+    Write-Error "Cannot connect to https://localhost:8082. Make sure the server is running. Error: $_"
     exit 1
 }
 
