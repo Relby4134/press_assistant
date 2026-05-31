@@ -48,7 +48,20 @@ module.exports = async (env, options) => {
         {
           test: /\.html$/,
           exclude: /node_modules/,
-          use: "html-loader",
+          use: {
+            loader: "html-loader",
+            options: {
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                ],
+              },
+            },
+          },
+        },
+        {
+          test: /\.css$/,
+          use: ["style-loader", "css-loader"],
         },
         {
           test: /\.(png|jpg|jpeg|gif|ico)$/,
@@ -70,6 +83,10 @@ module.exports = async (env, options) => {
           {
             from: "assets/*",
             to: "assets/[name][ext][query]",
+          },
+          {
+            from: "src/taskpane/taskpane.css",
+            to: "taskpane.css",
           },
           {
             from: "manifest*.xml",

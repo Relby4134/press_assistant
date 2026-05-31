@@ -46,6 +46,13 @@ if (-not $registered) {
     exit 1
 }
 
+# Add localhost to Trusted Sites zone (must run as current user, not elevated)
+# This allows WebView2/IE inside Office to load HTTPS content from localhost
+$zoneKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\localhost"
+New-Item -Path $zoneKey -Force | Out-Null
+Set-ItemProperty -Path $zoneKey -Name "https" -Type DWord -Value 2
+Write-Host "localhost added to Trusted Sites (current user)." -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Done. Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Fully close PowerPoint (check Task Manager - no POWERPNT.EXE)"

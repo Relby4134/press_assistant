@@ -539,7 +539,7 @@ public class LauncherApp {
                 Path script = getAppDir().resolve("install-cert.ps1");
                 new ProcessBuilder("powershell.exe", "-Command",
                         "Start-Process powershell -Verb RunAs -Wait " +
-                        "-ArgumentList '-ExecutionPolicy Bypass -File \"" + script + "\"'")
+                        "-ArgumentList @('-ExecutionPolicy','Bypass','-File','" + script.toString().replace("'", "''") + "')")
                         .redirectErrorStream(true).start()
                         .waitFor(60, TimeUnit.SECONDS);
                 boolean ok = isCertInstalled();
