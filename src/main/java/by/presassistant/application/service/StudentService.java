@@ -157,6 +157,11 @@ public class StudentService implements
         return questionRepository.findAllByLectureId(lectureId);
     }
 
+    @Transactional
+    public void deleteQuestion(UUID questionId) {
+        questionRepository.deleteById(questionId);
+    }
+
     @Override
     public Optional<UUID> findActiveLecture(Long chatId) {
         return studentRepository.findActiveStudentByChatId(chatId)

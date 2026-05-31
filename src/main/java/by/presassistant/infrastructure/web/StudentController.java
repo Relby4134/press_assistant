@@ -48,6 +48,12 @@ public class StudentController {
         return studentService.getQuestions(lectureId);
     }
 
+    @DeleteMapping("/questions/{questionId}")
+    public ResponseEntity<Void> deleteQuestion(@PathVariable UUID questionId) {
+        studentService.deleteQuestion(questionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/notify/slide")
     public ResponseEntity<Void> notifySlide(@RequestBody NotifySlideRequest req) {
         eventPublisher.publishEvent(new SlideChangedEvent(req.lectureId(), req.slideNumber()));

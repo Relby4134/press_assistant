@@ -318,11 +318,30 @@ hr {
   margin-bottom: 6px;
 }
 
+.question-item .q-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
 .question-item .q-name {
   font-size: 10px;
   color: #888;
-  margin-bottom: 2px;
 }
+
+.btn-delete-q {
+  padding: 0 5px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  color: #bbb;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-delete-q:hover { color: #d13438; }
 
 .question-item .q-text {
   font-size: 12px;

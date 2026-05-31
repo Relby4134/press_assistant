@@ -291,15 +291,23 @@ async function loadQuestions() {
 }
 
 function renderQuestions(questions) {
-  const list = el("questions-list");
+  const list  = el("questions-list");
+  const badge = el("questions-count");
   if (!questions || questions.length === 0) {
     list.innerHTML = '<div class="empty">Вопросов пока нет</div>';
+    badge.textContent = "";
+    badge.classList.add("hidden");
     return;
   }
+  badge.textContent = questions.length;
+  badge.classList.remove("hidden");
   list.innerHTML = [...questions].reverse()
     .map(q => `
       <div class="question-item">
-        <div class="q-name">${escapeHtml(q.studentName || "Студент")}</div>
+        <div class="q-header">
+          <span class="q-name">${escapeHtml(q.studentName || "Студент")}</span>
+          <button class="btn-delete-q" onclick="deleteQuestion('${q.id}')">✕</button>
+        </div>
         <div class="q-text">${escapeHtml(q.text)}</div>
       </div>`)
     .join("");
@@ -434,6 +442,19 @@ async function kickStudent(chatId) {
   }
 }
 window.kickStudent = kickStudent;
+
+async function deleteQuestion(questionId) {
+  try {
+    const res = await fetch(`${state.serverUrl}/students/questions/${questionId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(`Error: ${res.status}`);
+    await loadQuestions();
+  } catch (e) {
+    console.error("Failed to delete question", e);
+  }
+}
+window.deleteQuestion = deleteQuestion;
 
 // ── Переключение вкладок ──────────────────────────────────────────
 function switchTab(tabId) {
