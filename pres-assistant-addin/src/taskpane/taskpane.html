@@ -44,14 +44,6 @@
         <button id="btn-disconnect" class="btn-small btn-danger">✕ Завершить</button>
     </div>
 
-    <div class="qr-section">
-        <div class="qr-label">Студентам — отсканируйте QR-код:</div>
-        <div id="qr-code"></div>
-        <div id="qr-link" class="qr-link"></div>
-    </div>
-
-    <hr />
-
     <div class="slide-info">
         <div class="slide-number">Слайд <span id="current-slide">—</span></div>
         <div id="sync-status" class="sync-status">—</div>
@@ -68,8 +60,6 @@
         📤 Отправить слайд студентам
     </button>
 
-    <hr />
-
     <div class="message-row">
         <input id="input-message" type="text" placeholder="Сообщение студентам..." />
         <button id="btn-broadcast" class="btn-send">&#x27A4;</button>
@@ -78,7 +68,8 @@
     <hr />
 
     <div class="tabs">
-        <button class="tab active" data-tab="questions">
+        <button class="tab active" data-tab="qr">QR-код</button>
+        <button class="tab" data-tab="questions">
             Вопросы <span id="questions-count" class="count-badge hidden"></span>
         </button>
         <button class="tab" data-tab="students">
@@ -87,7 +78,15 @@
         <button class="tab" data-tab="analytics">Аналитика</button>
     </div>
 
-    <div id="tab-questions" class="tab-content">
+    <div id="tab-qr" class="tab-content">
+        <div class="qr-section">
+            <div class="qr-label">Студентам — отсканируйте QR-код:</div>
+            <div id="qr-code"></div>
+            <div id="qr-link" class="qr-link"></div>
+        </div>
+    </div>
+
+    <div id="tab-questions" class="tab-content hidden">
         <div class="tab-header">
             <span>Вопросы студентов</span>
             <button id="btn-refresh" class="btn-small">↻</button>

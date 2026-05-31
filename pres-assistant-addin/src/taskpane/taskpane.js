@@ -64,7 +64,7 @@ async function onStart() {
     show("screen-active");
     hide("screen-setup");
     generateQr(session.id);
-    switchTab("questions");
+    switchTab("qr");
 
     Office.context.document.addHandlerAsync(
       Office.EventType.DocumentSelectionChanged,
@@ -129,7 +129,7 @@ async function onDisconnect() {
   el("input-message").value = "";
   el("qr-code").innerHTML = "";
   el("qr-link").textContent = "";
-  switchTab("questions");
+  switchTab("qr");
 }
 
 // ── Смена слайда ──────────────────────────────────────────────────
