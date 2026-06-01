@@ -26,7 +26,7 @@ module.exports = async (env, options) => {
   const config = {
     devtool: "source-map",
     entry: {
-      polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
+      polyfill: ["core-js/stable", "regenerator-runtime/runtime", "whatwg-fetch"],
       taskpane: ["./src/taskpane/taskpane.js", "./src/taskpane/taskpane.html"],
       commands: "./src/commands/commands.js",
     },
@@ -48,7 +48,20 @@ module.exports = async (env, options) => {
         {
           test: /\.html$/,
           exclude: /node_modules/,
-          use: "html-loader",
+          use: {
+            loader: "html-loader",
+            options: {
+              sources: {
+                list: [
+                  { tag: "img", attribute: "src", type: "src" },
+                ],
+              },
+            },
+          },
+        },
+        {
+          test: /\.css$/,
+          use: ["style-loader", "css-loader"],
         },
         {
           test: /\.(png|jpg|jpeg|gif|ico)$/,
@@ -70,6 +83,10 @@ module.exports = async (env, options) => {
           {
             from: "assets/*",
             to: "assets/[name][ext][query]",
+          },
+          {
+            from: "src/taskpane/taskpane.css",
+            to: "taskpane.css",
           },
           {
             from: "manifest*.xml",

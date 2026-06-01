@@ -8,13 +8,16 @@ $manifestUrl = "https://localhost:8082/addin/manifest.xml"
 # Create local folder for manifest
 New-Item -ItemType Directory -Path $addinFolder -Force | Out-Null
 
+# Bypass SSL validation for self-signed certificate
+[Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+
 # Download production manifest from Spring Boot
 Write-Host "Downloading manifest from https://localhost:8082..."
 try {
-    Invoke-WebRequest -Uri $manifestUrl -OutFile "$addinFolder\manifest.xml" -UseBasicParsing
+    (New-Object Net.WebClient).DownloadFile($manifestUrl, "$addinFolder\manifest.xml")
     Write-Host "Manifest saved to $addinFolder" -ForegroundColor Green
 } catch {
-    Write-Error "Cannot connect to https://localhost:8082. Make sure the server is running."
+    Write-Error "Cannot connect to https://localhost:8082. Make sure the server is running. Error: $_"
     exit 1
 }
 
@@ -42,6 +45,13 @@ if (-not $registered) {
     Write-Warning "No supported Office installation found (checked 15.0, 16.0)"
     exit 1
 }
+
+# Add localhost to Trusted Sites zone (must run as current user, not elevated)
+# This allows WebView2/IE inside Office to load HTTPS content from localhost
+$zoneKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\Domains\localhost"
+New-Item -Path $zoneKey -Force | Out-Null
+Set-ItemProperty -Path $zoneKey -Name "https" -Type DWord -Value 2
+Write-Host "localhost added to Trusted Sites (current user)." -ForegroundColor Green
 
 Write-Host ""
 Write-Host "Done. Next steps:" -ForegroundColor Yellow

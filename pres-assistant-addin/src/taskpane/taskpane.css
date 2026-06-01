@@ -35,7 +35,7 @@ h2 {
   margin-bottom: 3px;
 }
 
-.field input {
+.field input:not([type="radio"]) {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid #ccc;
@@ -43,16 +43,37 @@ h2 {
   font-size: 12px;
 }
 
-.field input:focus {
+.field input:not([type="radio"]):focus {
   outline: none;
-  border-color: #0078d4;
+  border-color: #632e9e;
+}
+
+.mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.radio-opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+
+.radio-opt input[type="radio"] {
+  cursor: pointer;
+  margin: 0;
 }
 
 /* ── Кнопки ── */
 .btn-primary {
   width: 100%;
   padding: 8px;
-  background: #0078d4;
+  background: #632e9e;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -61,7 +82,7 @@ h2 {
   margin-top: 4px;
 }
 
-.btn-primary:hover { background: #006cbe; }
+.btn-primary:hover { background: #501880; }
 .btn-primary:disabled { background: #aaa; cursor: default; }
 
 .btn-small {
@@ -139,7 +160,7 @@ h2 {
 .slide-number {
   font-size: 14px;
   font-weight: 600;
-  color: #0078d4;
+  color: #632e9e;
 }
 
 .sync-status {
@@ -180,7 +201,7 @@ hr {
 
 .tab {
   flex: 1;
-  padding: 5px 8px;
+  padding: 5px 4px;
   background: #f3f3f3;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -190,8 +211,8 @@ hr {
 }
 
 .tab.active {
-  background: #0078d4;
-  border-color: #0078d4;
+  background: #632e9e;
+  border-color: #632e9e;
   color: #fff;
 }
 
@@ -291,17 +312,36 @@ hr {
 
 .question-item {
   background: #f9f9f9;
-  border-left: 3px solid #0078d4;
+  border-left: 3px solid #632e9e;
   border-radius: 3px;
   padding: 7px 8px;
   margin-bottom: 6px;
 }
 
+.question-item .q-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
 .question-item .q-name {
   font-size: 10px;
   color: #888;
-  margin-bottom: 2px;
 }
+
+.btn-delete-q {
+  padding: 0 5px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  color: #bbb;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-delete-q:hover { color: #d13438; }
 
 .question-item .q-text {
   font-size: 12px;
@@ -338,12 +378,12 @@ hr {
 
 .message-row input:focus {
   outline: none;
-  border-color: #0078d4;
+  border-color: #632e9e;
 }
 
 .btn-send {
   padding: 6px 10px;
-  background: #0078d4;
+  background: #632e9e;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -352,13 +392,13 @@ hr {
   line-height: 1;
 }
 
-.btn-send:hover     { background: #006cbe; }
+.btn-send:hover     { background: #501880; }
 .btn-send:disabled  { background: #aaa; cursor: default; }
 
 /* ── Аналитика ── */
 .analytics-item {
   background: #f9f9f9;
-  border-left: 3px solid #0078d4;
+  border-left: 3px solid #632e9e;
   border-radius: 3px;
   padding: 6px 8px;
   margin-bottom: 5px;
@@ -380,7 +420,7 @@ hr {
 
 .analytics-total {
   margin-left: auto;
-  background: #0078d4;
+  background: #632e9e;
   color: #fff;
   border-radius: 10px;
   padding: 0 6px;

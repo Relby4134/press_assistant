@@ -34,6 +34,11 @@ public class QuestionRepositoryAdapter implements QuestionRepository {
         return jpa.countByLectureSessionIdAndChatId(lectureId, chatId);
     }
 
+    @Override
+    public void deleteById(UUID id) {
+        jpa.deleteById(id);
+    }
+
     private Question toDomain(QuestionEntity e) {
         return new Question(e.getId(), e.getLectureSessionId(), e.getChatId(),
                 e.getStudentName(), e.getText(), e.getAskedAt());

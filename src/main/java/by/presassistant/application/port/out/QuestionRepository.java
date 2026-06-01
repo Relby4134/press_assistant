@@ -9,4 +9,5 @@ public interface QuestionRepository {
     Question save(Question question);
     List<Question> findAllByLectureId(UUID lectureId);
     long countByLectureIdAndChatId(UUID lectureId, Long chatId);
+    void deleteById(UUID id);
 }

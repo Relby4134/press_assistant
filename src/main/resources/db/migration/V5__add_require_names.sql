@@ -1,0 +1,2 @@
+ALTER TABLE lecture_sessions ADD COLUMN require_names BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE students ADD COLUMN full_name VARCHAR(255);

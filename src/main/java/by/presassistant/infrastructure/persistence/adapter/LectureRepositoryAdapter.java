@@ -43,7 +43,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
 
     private LectureSession toDomain(LectureSessionEntity e) {
         return new LectureSession(e.getId(), e.getTitle(), e.getCurrentSlide(),
-                e.isEnded(), e.getStartedAt(), e.getFilePath());
+                e.isEnded(), e.getStartedAt(), e.getFilePath(), e.isRequireNames());
     }
 
     private LectureSessionEntity toEntity(LectureSession l) {
@@ -54,6 +54,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 .ended(l.isEnded())
                 .startedAt(l.getStartedAt())
                 .filePath(l.getFilePath())
+                .requireNames(l.isRequireNames())
                 .build();
     }
 }

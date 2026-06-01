@@ -43,7 +43,7 @@ public class InMemoryAnalyticsAdapter implements AnalyticsPort {
                             .map(e -> new StudentAnalytics.SlideStats(e.getKey(), e.getValue()))
                             .collect(Collectors.toList());
                     return new StudentAnalytics(s.getChatId(), s.getFirstName(),
-                            s.getUsername(), s.isKicked(), total, slides);
+                            s.getUsername(), s.getFullName(), s.isKicked(), total, slides);
                 })
                 .sorted(Comparator.comparingInt(StudentAnalytics::totalRequests).reversed())
                 .collect(Collectors.toList());

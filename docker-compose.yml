@@ -1,6 +1,7 @@
 services:
 
   app:
+
     build: .
     container_name: pres_assistant_v2_app
     ports:

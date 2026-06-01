@@ -29,7 +29,7 @@ public class StudentController {
     @PostMapping("/join")
     public Student join(@RequestBody JoinRequest req) {
         return studentService.join(
-                new JoinLectureCommand(req.chatId(), req.firstName(), req.username(), req.lectureId()));
+                new JoinLectureCommand(req.chatId(), req.firstName(), req.username(), req.lectureId(), null));
     }
 
     @PostMapping("/question")
@@ -46,6 +46,12 @@ public class StudentController {
     @GetMapping("/questions/{lectureId}")
     public List<Question> questions(@PathVariable UUID lectureId) {
         return studentService.getQuestions(lectureId);
+    }
+
+    @DeleteMapping("/questions/{questionId}")
+    public ResponseEntity<Void> deleteQuestion(@PathVariable UUID questionId) {
+        studentService.deleteQuestion(questionId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/notify/slide")

@@ -26,6 +26,7 @@ dependencies {
     implementation("org.telegram:telegrambots-client:7.10.0")
     implementation("org.telegram:telegrambots-springboot-longpolling-starter:7.10.0")
     implementation("org.apache.poi:poi-ooxml:5.3.0")
+    implementation("com.formdev:flatlaf:3.4.1")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("com.h2database:h2")
@@ -73,7 +74,7 @@ tasks.named("processResources") {
     dependsOn(copyAddinToResources)
 }
 
-// === Standalone launcher JAR (thin — only LauncherApp, no Spring) ===
+// === Standalone launcher JAR (LauncherApp + FlatLaf bundled) ===
 val launcherJar by tasks.registering(Jar::class) {
     archiveClassifier.set("launcher")
     dependsOn(tasks.compileJava)
@@ -83,12 +84,20 @@ val launcherJar by tasks.registering(Jar::class) {
     from(sourceSets.main.get().output) {
         include("by/presassistant/LauncherApp*.class")
     }
+    // Bundle FlatLaf so the thin JAR is self-contained
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.name.contains("flatlaf") }
+            .map { zipTree(it) }
+    }) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    }
 }
 
-// === jpackage — Windows app image with bundled JRE ===
+// === jpackage — Windows MSI installer with bundled JRE ===
 val packageApp by tasks.registering(Exec::class) {
     group = "distribution"
-    description = "Build Windows app image with bundled JRE (requires JDK 21+)"
+    description = "Build Windows MSI installer (requires JDK 21+ and WiX Toolset 3.11)"
     dependsOn(tasks.bootJar, launcherJar)
 
     val inputDir  = layout.buildDirectory.dir("jpackage-input").get().asFile
@@ -96,10 +105,12 @@ val packageApp by tasks.registering(Exec::class) {
     val jpackage  = file(System.getProperty("java.home")).resolve("bin/jpackage.exe")
         .takeIf { it.exists() }
         ?: file(System.getProperty("java.home")).resolve("bin/jpackage")
+    val iconFile  = file("app.ico")
 
     doFirst {
         delete(inputDir)
-        delete(outputDir.resolve("PresAssistant"))
+        // MSI outputs a file, not a folder — удаляем старый msi если есть
+        outputDir.listFiles()?.filter { it.name.endsWith(".msi") }?.forEach { it.delete() }
         inputDir.mkdirs()
         outputDir.mkdirs()
 
@@ -118,10 +129,15 @@ val packageApp by tasks.registering(Exec::class) {
         if (secrets.exists()) secrets.copyTo(inputDir.resolve("launcher.properties"), overwrite = true)
     }
 
-    commandLine(
+    // WiX 3.11 должен быть в PATH для jpackage
+    environment("PATH", "C:\\Program Files (x86)\\WiX Toolset v3.11\\bin;" +
+            (System.getenv("PATH") ?: ""))
+
+    val cmd = mutableListOf(
         jpackage.absolutePath,
-        "--type", "app-image",
+        "--type", "msi",
         "--name", "PresAssistant",
+        "--description", "Lecturer Assistant - lecture broadcasting via Telegram",
         "--app-version", "1.0.0",
         "--vendor", "University",
         "--runtime-image", file(System.getProperty("java.home")).absolutePath,
@@ -129,6 +145,13 @@ val packageApp by tasks.registering(Exec::class) {
         "--dest", outputDir.absolutePath,
         "--main-jar", "launcher.jar",
         "--main-class", "by.presassistant.LauncherApp",
-        "--java-options", "-Djava.awt.headless=false"
+        "--java-options", "-Djava.awt.headless=false",
+        "--win-dir-chooser",
+        "--win-menu",
+        "--win-menu-group", "PresAssistant",
+        "--win-shortcut"
     )
+    if (iconFile.exists()) cmd.addAll(listOf("--icon", iconFile.absolutePath))
+
+    commandLine(cmd)
 }

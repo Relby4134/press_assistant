@@ -48,8 +48,9 @@ async function onStart() {
 
   try {
     const fileUrl = Office.context.document.url;
+    const requireNames = el("mode-named").checked;
     const res = await fetch(
-      `${state.serverUrl}/lecture/start?title=${encodeURIComponent(title)}&fileUrl=${encodeURIComponent(fileUrl)}`,
+      `${state.serverUrl}/lecture/start?title=${encodeURIComponent(title)}&fileUrl=${encodeURIComponent(fileUrl)}&requireNames=${requireNames}`,
       { method: "POST" }
     );
     if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`);
@@ -63,7 +64,7 @@ async function onStart() {
     show("screen-active");
     hide("screen-setup");
     generateQr(session.id);
-    switchTab("questions");
+    switchTab("qr");
 
     Office.context.document.addHandlerAsync(
       Office.EventType.DocumentSelectionChanged,
@@ -128,7 +129,7 @@ async function onDisconnect() {
   el("input-message").value = "";
   el("qr-code").innerHTML = "";
   el("qr-link").textContent = "";
-  switchTab("questions");
+  switchTab("qr");
 }
 
 // ── Смена слайда ──────────────────────────────────────────────────
@@ -290,15 +291,23 @@ async function loadQuestions() {
 }
 
 function renderQuestions(questions) {
-  const list = el("questions-list");
+  const list  = el("questions-list");
+  const badge = el("questions-count");
   if (!questions || questions.length === 0) {
     list.innerHTML = '<div class="empty">Вопросов пока нет</div>';
+    badge.textContent = "";
+    badge.classList.add("hidden");
     return;
   }
+  badge.textContent = questions.length;
+  badge.classList.remove("hidden");
   list.innerHTML = [...questions].reverse()
     .map(q => `
       <div class="question-item">
-        <div class="q-name">${escapeHtml(q.studentName || "Студент")}</div>
+        <div class="q-header">
+          <span class="q-name">${escapeHtml(q.studentName || "Студент")}</span>
+          <button class="btn-delete-q" onclick="deleteQuestion('${q.id}')">✕</button>
+        </div>
         <div class="q-text">${escapeHtml(q.text)}</div>
       </div>`)
     .join("");
@@ -343,13 +352,14 @@ function renderAnalytics(data) {
     return;
   }
   list.innerHTML = data.map(s => {
+    const displayName = s.fullName || s.firstName || "Студент";
     const slidesStr = s.slides
       .map(sl => `слайд ${sl.slideNumber}${sl.count > 1 ? ` ×${sl.count}` : ""}`)
       .join(", ");
     return `
       <div class="analytics-item${s.kicked ? " kicked" : ""}">
         <div class="analytics-name">
-          ${escapeHtml(s.firstName || "Студент")}
+          ${escapeHtml(displayName)}
           ${s.kicked ? '<span class="kicked-badge">выгнан</span>' : ""}
           <span class="analytics-total">${s.totalRequests}</span>
         </div>
@@ -398,17 +408,23 @@ function renderStudents(students) {
   badge.textContent = activeCount;
   badge.classList.remove("hidden");
   list.innerHTML = students
-    .map(s => `
+    .map(s => {
+      const displayName = s.fullName || s.firstName || "Студент";
+      const subtitle = s.fullName
+        ? (s.username ? `@${escapeHtml(s.username)}` : "")
+        : "";
+      return `
       <div class="student-item${s.kicked ? " kicked" : ""}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px">
           <div>
-            <span class="s-name">${escapeHtml(s.firstName || "Студент")}</span>
+            <span class="s-name">${escapeHtml(displayName)}</span>
             ${s.kicked ? '<span class="kicked-badge">выгнан</span>' : ""}
-            ${s.username ? `<div class="s-username">@${escapeHtml(s.username)}</div>` : ""}
+            ${subtitle ? `<div class="s-username">${subtitle}</div>` : ""}
           </div>
           ${!s.kicked ? `<button class="btn-kick" onclick="kickStudent(${s.chatId})">Выгнать</button>` : ""}
         </div>
-      </div>`)
+      </div>`;
+    })
     .join("");
 }
 
@@ -426,6 +442,19 @@ async function kickStudent(chatId) {
   }
 }
 window.kickStudent = kickStudent;
+
+async function deleteQuestion(questionId) {
+  try {
+    const res = await fetch(`${state.serverUrl}/students/questions/${questionId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(`Error: ${res.status}`);
+    await loadQuestions();
+  } catch (e) {
+    console.error("Failed to delete question", e);
+  }
+}
+window.deleteQuestion = deleteQuestion;
 
 // ── Переключение вкладок ──────────────────────────────────────────
 function switchTab(tabId) {

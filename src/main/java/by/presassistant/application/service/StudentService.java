@@ -87,7 +87,7 @@ public class StudentService implements
         }
 
         Student student = new Student(UUID.randomUUID(), command.chatId(),
-                command.firstName(), command.username(), command.lectureId());
+                command.firstName(), command.username(), command.lectureId(), command.fullName());
         Student saved = studentRepository.save(student);
 
         notificationPort.sendMessage(command.chatId(),
@@ -105,7 +105,7 @@ public class StudentService implements
     public Student joinByTitle(Long chatId, String firstName, String username, String title) {
         LectureSession lecture = lectureRepository.findActiveByTitle(title)
                 .orElseThrow(() -> new LectureNotFoundException(title));
-        return join(new JoinLectureCommand(chatId, firstName, username, lecture.getId()));
+        return join(new JoinLectureCommand(chatId, firstName, username, lecture.getId(), null));
     }
 
     @Override
@@ -157,6 +157,11 @@ public class StudentService implements
         return questionRepository.findAllByLectureId(lectureId);
     }
 
+    @Transactional
+    public void deleteQuestion(UUID questionId) {
+        questionRepository.deleteById(questionId);
+    }
+
     @Override
     public Optional<UUID> findActiveLecture(Long chatId) {
         return studentRepository.findActiveStudentByChatId(chatId)
@@ -171,6 +176,12 @@ public class StudentService implements
 
     public Optional<byte[]> getSlideImageBytes(UUID lectureId, int slideNumber) {
         return slideStorage.getSlide(lectureId, slideNumber);
+    }
+
+    public String getStudentDisplayName(Long chatId, UUID lectureId) {
+        return studentRepository.findByChatIdAndLectureId(chatId, lectureId)
+                .map(Student::getDisplayName)
+                .orElse("Студент");
     }
 
     public void recordSlideRequest(UUID lectureId, Long chatId, int slideNumber) {

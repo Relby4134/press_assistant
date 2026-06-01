@@ -18,6 +18,20 @@
         <input id="input-title" type="text" placeholder="например: Лекция 1 — Введение" />
     </div>
 
+    <div class="field">
+        <label>Режим участия</label>
+        <div class="mode-selector">
+            <label class="radio-opt">
+                <input type="radio" name="mode" id="mode-anonymous" value="anonymous" checked />
+                Анонимный
+            </label>
+            <label class="radio-opt">
+                <input type="radio" name="mode" id="mode-named" value="named" />
+                Поимённый (студенты вводят Ф.И.)
+            </label>
+        </div>
+    </div>
+
     <button id="btn-start" class="btn-primary">Начать лекцию</button>
     <div id="setup-error" class="error hidden"></div>
 </div>
@@ -29,14 +43,6 @@
         <span id="lecture-title">—</span>
         <button id="btn-disconnect" class="btn-small btn-danger">✕ Завершить</button>
     </div>
-
-    <div class="qr-section">
-        <div class="qr-label">Студентам — отсканируйте QR-код:</div>
-        <div id="qr-code"></div>
-        <div id="qr-link" class="qr-link"></div>
-    </div>
-
-    <hr />
 
     <div class="slide-info">
         <div class="slide-number">Слайд <span id="current-slide">—</span></div>
@@ -54,8 +60,6 @@
         📤 Отправить слайд студентам
     </button>
 
-    <hr />
-
     <div class="message-row">
         <input id="input-message" type="text" placeholder="Сообщение студентам..." />
         <button id="btn-broadcast" class="btn-send">&#x27A4;</button>
@@ -64,14 +68,25 @@
     <hr />
 
     <div class="tabs">
-        <button class="tab active" data-tab="questions">Вопросы</button>
+        <button class="tab active" data-tab="qr">QR-код</button>
+        <button class="tab" data-tab="questions">
+            Вопросы <span id="questions-count" class="count-badge hidden"></span>
+        </button>
         <button class="tab" data-tab="students">
             Студенты <span id="students-count" class="count-badge hidden"></span>
         </button>
         <button class="tab" data-tab="analytics">Аналитика</button>
     </div>
 
-    <div id="tab-questions" class="tab-content">
+    <div id="tab-qr" class="tab-content">
+        <div class="qr-section">
+            <div class="qr-label">Студентам — отсканируйте QR-код:</div>
+            <div id="qr-code"></div>
+            <div id="qr-link" class="qr-link"></div>
+        </div>
+    </div>
+
+    <div id="tab-questions" class="tab-content hidden">
         <div class="tab-header">
             <span>Вопросы студентов</span>
             <button id="btn-refresh" class="btn-small">↻</button>
@@ -103,6 +118,5 @@
 
 </div>
 
-<script src="taskpane.js"></script>
 </body>
 </html>

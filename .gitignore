@@ -11,6 +11,7 @@ secrets.properties
 certs/*.key
 certs/*.p12
 certs/*.srl
+certs/*.csr
 
 # Bundled bot credentials (generated into build dir, never committed)
 launcher.properties
